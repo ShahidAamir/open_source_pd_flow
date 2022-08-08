@@ -210,7 +210,7 @@ git pull https://github.com/nickson-jose/vsdstdcelldesign
 open the .mag file and take a look at the layed out inverter
 you will need to provide the .TECH file an the .MAG file as arguments to the magic command.
 
-<img src="INVERTER_LAYOUT.png">
+<img src="images/INVERTER_LAYOUT.png">
 
 ##### DRC in MAGIC
 DRC checks can be performed in magic using the following commands
@@ -236,4 +236,4 @@ ext2spice cthresh 0 rthresh 0
 ext2spice
 ```
 
-<img src="SPICE_EXTRACTION.png">
+<img src="images/SPICE_EXTRACTION.png">
