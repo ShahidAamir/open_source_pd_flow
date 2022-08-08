@@ -211,8 +211,8 @@ open the .mag file and take a look at the layed out inverter
 you will need to provide the .TECH file an the .MAG file as arguments to the magic command.
 
 <img src="images/INVERTER_LAYOUT.png">
-
-##### DRC in MAGIC
+ 
+### DRC in MAGIC
 DRC checks can be performed in magic using the following commands
 
 ```tk
@@ -223,17 +223,163 @@ drc find
 
 drc count lists the count of DRC rules that have been violated, drc why explains the conflicting layer information and drc find lists the next error
 
-##### Extraction of SPICE netlist from the Layout
+### Extraction of SPICE netlist from the Layout
 To simulate and extract the timing characteristics from the cell we need to extract the spice netlist so that we can simulate it in ngspice.
 
 Extract the netlist
 ```tk
 extract all
 ```
+<img src="images/EXT_DUMP.png">
+
 Convert it to a spice deck
 ```tk
 ext2spice cthresh 0 rthresh 0
 ext2spice
 ```
-
 <img src="images/SPICE_EXTRACTION.png">
+<img src="images/SPICE_DUMP.png">
+
+Edit the spice file to bias the Source and Drain.
+Attach a pulsing power supply to the gate and add commands to run a transient analysis.
+Also change the MOS names to something like M0,M1 as names starting with X have some special significance in ngSPICE and may throw Unknown SUB circuit error.
+<img src="images/MODIFIED_SPICE_FILE.png">
+
+### Transient waveform Analysis
+```tk
+ngspice <name_of_SPICE_file>
+plot Y vs time A
+```
+
+<img src="images/SPICE_SIM_OUT.png">
+
+
+All percentages are w.r.t. full swing of the voltage output
+
+| Timing Characteristic     	| Description                                                      	|
+|---------------------------	|------------------------------------------------------------------	|
+| Cell output rise delay    	| T.T. by output to rise to 50% after the input has fallen by 50%  	|
+| Cell output fall delay    	| T.T. by output to fall to 50% after the output has fallen by 50% 	|
+| Cell rise transition time 	| T.T. by output to rise to 80% from 20%                           	|
+| Cell fall transition time 	| T.T. by output to fall to 20% from 80%                           	|
+
+
+##### Cell output fall delay data points
+<img src="images/CELL_OUTPUT_FALL_DELAY.png">
+Cell output fall delay is 21.1 pico seconds
+
+
+##### Cell output rise delay data points
+<img src="images/CELL_OUTPUT_RISE_DELAY.png">
+Cell output rise delay is 56.6 pico seconds
+
+
+##### Cell Fall Transition Time data points
+<img src="images/CELL_FALL_TRANSITION_TIME.png">
+Cell Fall Transition time is 42.6 pico seconds
+
+
+##### Cell Rise Transition Time  data points
+<img src="images/CELL_RISE_TRANSITION_TIME.png">
+Cell Rise Transition time is 59.2 pico seconds
+
+## DAY 4
+### Checking the alignment of the custom Inverter cell
+Open the sky130A tracks.info file
+<img src="images/SKY130_TRACKS_INFO.png">
+
+Note down the local interconnect xspacing, yspacing, xorigin and yorigin information
+We will use this info to draw grid lines in magic and visually inspect the alignment of
+the local interconnect tracks with the input and output ports.
+
+Open the Inverter mag file in MAGIC and use the grid command to setup the local interconnect grid.
+```tk
+grid 0.46um 0.34um 0.23um 0.17um
+```
+
+Ensure that the grid x and y lines intersect at a point inside the A and Y port
+<img src="images/GRID_ZOOMED_VIEW.png">
+
+Ensure that width of the standard cell is an odd multiple of xpitch (0.46um)
+<img src="images/GRID_VIEW.png">
+
+Ensure that A and Y have been declared as ports (already done for us).
+
+### Extract the lef file from  mag file
+```tk
+lf write
+```
+<img src="images/LEF_FROM_MAG.png">
+
+### Moving and setting up files
+Copy the 
+```
+extracted lef file,  
+vsdstdcelldesign/libs/sky130_fd_sc_hd__fast.lib
+vsdstdcelldesign/libs/sky130_fd_sc_hd__slow.lib
+vsdstdcelldesign/libs/sky130_fd_sc_hd__typical.lib
+```
+to openlane/designs/picorv32a/src/ directory
+
+Copy the my_base.sdc from vsdstdcelldesign/extras/
+to openlane/designs/picorv32a/src/ directory
+
+Copy the sta.conf from vsdstdcelldesign/extras/
+to openlane directory
+
+Now sta can be performed from the openlane directory
+
+### STA using OpenSTA
+
+First synthesize the design using the run_synthesis command and ensure that the custom Inverter cell is being instantiated in the netlist
+
+<img src="images/CUSTOM_CELL_PLACED.png">
+<img src="images/SUCCESSFULL_SYNTH.png">
+
+##### OpenSTA
+OpenSTA can be launched from the OpenLANE environment using the sta command 
+```bash
+sta <conf_file>
+```
+
+sta command returns a Timing Analysis Report which contains Hold and Setup time slack as well as Total and Worst negative slack. 
+
+Using this timing report we will list the conficting instances try to resolve negative slack.
+One method is to replace conflicting instances with stronger buffered instances from the library to reduce the slack violations.
+
+some usefull commands in this process
+```tcl
+report_checks
+report_check -fields {net cap slew input_pins} -digits 4
+replace_cell <instance> <library_cell_to_replace_with>
+```
+List the conflicting instances using the report_checks command and replace the cells using replace_cell command
+
+Once the wns and tns is reduced to as small as possible we will proceed to CTS
+
+### Clock Tree Synthesis
+
+Clock tree synthesis is the process of generating a clock tree for a design after it has been passed through the synthesis, floorplan and placement stages.
+```tcl
+run_cts
+```
+
+## DAY 5
+
+### Generating a Power Distribution Network
+This step generates the Power distribution network which takes power from the power and ground pins of the die and distributes it to a Power ring which is in turn routed into a mesh with tracks and rails which form a 2d grid powering up the entire logic circuitary.
+
+```tcl
+gen_pdn
+```
+
+### Routing using TritonRoute
+
+Global routing is done along with run_floorplan command using RePLAce tool
+Detailed routing is done using Triton Route
+
+TritonRoute honors the route guides placed by the fast route performed earlies using RePLAce.
+
+```tcl
+run_routing
+```
