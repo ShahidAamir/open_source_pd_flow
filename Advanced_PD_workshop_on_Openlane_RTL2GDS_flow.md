@@ -40,7 +40,6 @@ RTL to GDS flow refers to the process of systematically converting a Register Tr
 |     	| Clock Tree Synthesis                  	| TritonCTS                                	|
 | 5   	| Generation of Power Distr. NW         	|                                          	|
 |     	| Routing using TritonRoute             	|                                          	|
-|     	| SPEF file extraction                  	|                                          	|
 
 
 ## DAY 1
