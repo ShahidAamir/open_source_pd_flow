@@ -1,6 +1,6 @@
 # Advanced PD workshop on Openlane RTL2GDS flow
 
-Reposotory documents the work done during the Advanced PD workshop using OpenLANE + SKY130 + PICORV32
+Repository documents the work done during the Advanced PD workshop using OpenLANE + SKY130 + PICORV32
 
 ## RTL2GDS
 RTL to GDS flow refers to the process of systematically converting a Register Transfer Level (RTL) to a Graphic Design System (GDS)  II (2) stream format guided by a Synopsys® Design Constraints (SDC) for Timing requirements and a Process Design Kit for Physical Layout constraints.
